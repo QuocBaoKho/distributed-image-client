@@ -22,6 +22,9 @@ interface TaskPayload {
 export default function HomeScreen() {
   const [chunkImage, setChunkImage] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("Waiting for task...");
+  const [results, setResults] = useState<{ chunkId: number; data: string }[]>(
+    []
+  );
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -38,6 +41,7 @@ export default function HomeScreen() {
         chunkId,
         filteredData: filtered,
       });
+      setResults((prev) => [...prev, { chunkId, data: filtered }]);
 
       setStatus(`Chunk ${chunkId} done! Waiting for next task...`);
     });
@@ -100,11 +104,19 @@ export default function HomeScreen() {
       <ThemedText type="subtitle" style={styles.text}>
         {status}
       </ThemedText>
-      {chunkImage ? (
-        <Image
-          source={{ uri: `data:image/png;base64,${chunkImage}` }}
-          style={styles.image}
-        />
+
+      {results.length > 0 ? (
+        results
+          .sort((a, b) => a.chunkId - b.chunkId)
+          .map(({ chunkId, data }) => (
+            <ThemedView key={chunkId} style={{ marginBottom: 20 }}>
+              <ThemedText>Chunk {chunkId}</ThemedText>
+              <Image
+                source={{ uri: `data:image/png;base64,${data}` }}
+                style={styles.image}
+              />
+            </ThemedView>
+          ))
       ) : (
         <ActivityIndicator size="large" color="#ff4757" />
       )}
